@@ -1,0 +1,14 @@
+name: Stream Scraper
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Har 5 min mein chalega
+  workflow_dispatch:
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with: { node-version: '18' }
+      - run: npm install puppeteer axios
+      - run: node laptop_scraper.js
