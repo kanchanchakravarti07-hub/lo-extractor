@@ -54,11 +54,17 @@ async function startScraper() {
             }
             req.continue();
         });
-
+        
+        // Add this line before page.goto:
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
         await page.goto('https://stream-xhd.com/live1.php?stream=dsports', { 
             waitUntil: 'networkidle2',
             timeout: 60000 
         });
+        // Add this line after the page.goto
+const content = await page.content();
+console.log("DEBUG: Page content length is:", content.length);
+// If this length is very small (like < 500), they are serving you a "Blocked" or "Access Denied" page!
         
         console.log("✅ Scraper active.");
     } catch (e) {
