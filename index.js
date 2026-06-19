@@ -7,6 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files
 app.use(express.static(path.join(__dirname, 'player')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'player', 'index.html')));
 
@@ -15,7 +16,7 @@ let latestLink = "";
 async function startScraper() {
     console.log("🚀 Starting scraper...");
     
-    // We let Puppeteer find the browser automatically
+    // Clean launch options: No forced paths
     const launchOptions = {
         headless: "new",
         args: [
@@ -30,6 +31,7 @@ async function startScraper() {
         const browser = await puppeteer.launch(launchOptions);
         const page = await browser.newPage();
         
+        // Anti-bot headers
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36');
 
         await page.setRequestInterception(true);
@@ -43,11 +45,15 @@ async function startScraper() {
             req.continue();
         });
 
-        await page.goto('https://stream-xhd.com/live1.php?stream=dsports', { waitUntil: 'networkidle2', timeout: 60000 });
+        await page.goto('https://stream-xhd.com/live1.php?stream=dsports', { 
+            waitUntil: 'networkidle2', 
+            timeout: 60000 
+        });
         
-        console.log("✅ Scraper cycle finished.");
+        console.log("✅ Scraper active.");
     } catch (e) {
         console.error("❌ Scraper error:", e.message);
+        // Retry logic to prevent crash
         setTimeout(startScraper, 5000);
     }
 }
