@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Stream Master | KANCHAN</title>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -13,22 +12,16 @@
     </div>
 
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
-    <script src="https://unpkg.com/@silvermine/videojs-quality-selector/dist/js/silvermine-videojs-quality-selector.min.js"></script>
-
+    
     <script>
-        const player = videojs('my-video', {
-    html5: {
-        hls: {
-            bandwidth: 5000000, // Forces the player to aim for 5Mbps (high quality)
-            enableLowInitialPlaylist: false
-        }
-    }
-});
-
-        // Initialize plugin only if the stream is ready
-        player.on('loadedmetadata', function() {
-            if (player.qualitySelector) {
-                player.qualitySelector();
+        // Initialize Video.js with robust HLS options
+        var player = videojs('my-video', {
+            html5: {
+                hls: {
+                    overrideNative: true, // Forces Video.js to use its own HLS engine
+                    preloadMetadata: true,
+                    allowNudgeGaps: true // Helps keep the stream alive
+                }
             }
         });
 
@@ -36,12 +29,26 @@
             try {
                 const res = await fetch('/get-live-link');
                 const data = await res.json();
+                
                 if (data.url && player.src() !== data.url) {
-                    player.src({ src: data.url, type: 'application/x-mpegURL' });
-                    player.play();
+                    console.log("🔥 Switching to stream:", data.url);
+                    
+                    // Update the source with proper type
+                    player.src({ 
+                        src: data.url, 
+                        type: 'application/x-mpegURL' 
+                    });
+                    
+                    // Force the player to load and play
+                    player.load();
+                    player.play().catch(e => console.log("Autoplay blocked, user interaction needed."));
                 }
-            } catch (e) { console.warn("Waiting for stream..."); }
+            } catch (e) { 
+                console.warn("Waiting for stream..."); 
+            }
         }
+
+        // Check for new link every 5 seconds
         setInterval(fetchAndPlay, 5000);
         fetchAndPlay();
     </script>
