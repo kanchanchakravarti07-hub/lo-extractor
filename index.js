@@ -13,12 +13,11 @@ app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'player', 'index.ht
 let latestLink = "";
 
 async function startScraper() {
-    console.log("🚀 Starting aggressive snatcher...");
+    console.log("🚀 Starting scraper...");
     
+    // We let Puppeteer find the browser automatically
     const launchOptions = {
         headless: "new",
-        // Force the path specifically for Render
-        executablePath: process.env.RENDER ? '/usr/bin/google-chrome' : undefined,
         args: [
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
