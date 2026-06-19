@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <title>Stream Master | KANCHAN</title>
     <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css">
+    <style>
+        body { margin: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .video-container { width: 100%; max-width: 900px; }
+    </style>
 </head>
 <body>
     <div class="video-container">
@@ -14,42 +17,40 @@
     <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
     
     <script>
-        // Initialize Video.js with robust HLS options
         var player = videojs('my-video', {
             html5: {
                 hls: {
-                    overrideNative: true, // Forces Video.js to use its own HLS engine
-                    preloadMetadata: true,
-                    allowNudgeGaps: true // Helps keep the stream alive
+                    overrideNative: true
                 }
             }
         });
+
+        let currentSrc = "";
 
         async function fetchAndPlay() {
             try {
                 const res = await fetch('/get-live-link');
                 const data = await res.json();
                 
-                if (data.url && player.src() !== data.url) {
-                    console.log("🔥 Switching to stream:", data.url);
+                // Agar link mil gaya aur naya hai, toh hi update karo
+                if (data.url && currentSrc !== data.url) {
+                    console.log("🔥 Setting stream to proxy:", data.url);
+                    currentSrc = data.url;
                     
-                    // Update the source with proper type
-                    // index.html ke script mein ye badlo:
-player.src({ 
-    src: '/proxy-stream', // Direct link ki jagah proxy route use karo
-    type: 'application/x-mpegURL' 
-});
+                    // Proxy route use karo
+                    player.src({ 
+                        src: '/proxy-stream', 
+                        type: 'application/x-mpegURL' 
+                    });
                     
-                    // Force the player to load and play
                     player.load();
-                    player.play().catch(e => console.log("Autoplay blocked, user interaction needed."));
+                    player.play().catch(e => console.log("Autoplay blocked."));
                 }
             } catch (e) { 
-                console.warn("Waiting for stream..."); 
+                console.warn("Waiting for link..."); 
             }
         }
 
-        // Check for new link every 5 seconds
         setInterval(fetchAndPlay, 5000);
         fetchAndPlay();
     </script>
