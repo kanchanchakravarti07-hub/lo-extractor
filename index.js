@@ -22,9 +22,16 @@ app.post('/update-link', (req, res) => {
 
 // Proxy route for CORS bypass
 app.get('/proxy-stream', (req, res) => {
-    if (!latestLink) return res.status(404).send("No stream found");
+    if (!latestLink) return res.status(404).send("No stream");
 
-    https.get(latestLink, (proxyRes) => {
+    const options = {
+        headers: {
+            'Referer': 'https://stream-xhd.com/',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+        }
+    };
+
+    https.get(latestLink, options, (proxyRes) => {
         res.writeHead(proxyRes.statusCode, proxyRes.headers);
         proxyRes.pipe(res);
     }).on('error', (e) => res.status(500).send(e.message));
