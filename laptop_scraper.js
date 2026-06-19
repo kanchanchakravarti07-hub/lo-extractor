@@ -1,16 +1,24 @@
-const puppeteer = require('puppeteer');
-const axios = require('axios');
-
+// Purane 'require' ki jagah hum 'import' use karenge
 async function run() {
-    const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+    // Dynamic import for Puppeteer
+    const puppeteer = await import('puppeteer');
+    const axios = (await import('axios')).default;
+    
+    const browser = await puppeteer.launch({ 
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+    });
+    
     const page = await browser.newPage();
     
     page.on('request', async (req) => {
         if (req.url().includes('mono.m3u8')) {
             console.log("Found link:", req.url());
-            // Yahan apne Render wale site ka link daalo
-            await axios.post('https://lo-extractor-1.onrender.com/update-link', { url: req.url() });
-            process.exit(0); 
+            try {
+                await axios.post('https://lo-extractor-1.onrender.com/update-link', { url: req.url() });
+                process.exit(0); 
+            } catch (err) {
+                console.log("Error sending link:", err.message);
+            }
         }
     });
 
