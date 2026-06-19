@@ -2,22 +2,19 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const cors = require('cors');
-const fs = require('fs'); // Added this to check file existence
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 app.use(express.static(path.join(__dirname, 'player')));
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'player', 'index.html'));
-});
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'player', 'index.html')));
 
 let latestLink = "";
 
 async function startScraper() {
-    console.log("🚀 Starting headless snatcher...");
+    console.log("🚀 Starting aggressive snatcher...");
     
     const launchOptions = {
         headless: "new",
@@ -25,18 +22,14 @@ async function startScraper() {
             '--no-sandbox', 
             '--disable-setuid-sandbox', 
             '--disable-dev-shm-usage',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--window-size=1920,1080'
         ]
     };
 
-    // Fail-safe path detection
     if (process.env.RENDER) {
-        const chromePath = '/usr/bin/google-chrome';
-        if (fs.existsSync(chromePath)) {
-            launchOptions.executablePath = chromePath;
-            console.log("✅ Using Chrome at:", chromePath);
-        } else {
-            console.log("⚠️ Chrome not found at /usr/bin/google-chrome. Trying default...");
+        if (fs.existsSync('/usr/bin/google-chrome')) {
+            launchOptions.executablePath = '/usr/bin/google-chrome';
         }
     }
     
@@ -44,34 +37,32 @@ async function startScraper() {
         const browser = await puppeteer.launch(launchOptions);
         const page = await browser.newPage();
         
+        // Anti-bot headers
+        await page.setExtraHTTPHeaders({
+            'Referer': 'https://www.google.com/',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'sec-ch-ua': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"Windows"'
+        });
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
+
         await page.setRequestInterception(true);
         page.on('request', (req) => {
             if (req.url().includes('mono.m3u8')) {
-                if (latestLink !== req.url()) {
-                    latestLink = req.url();
-                    console.log("🔥 SNATCHED: ", latestLink);
-                }
+                latestLink = req.url();
+                console.log("🔥 SNATCHED: ", latestLink);
             }
             req.continue();
         });
+
+        console.log("Navigating to target...");
+        await page.goto('https://stream-xhd.com/live1.php?stream=dsports', { waitUntil: 'networkidle2', timeout: 60000 });
         
-        // Add this line before page.goto:
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
-        await page.setExtraHTTPHeaders({
-            'Accept-Language': 'en-US,en;q=0.9',
-        });
-        await page.goto('https://stream-xhd.com/live1.php?stream=dsports', { 
-            waitUntil: 'networkidle0', // Wait until everything is totally loaded
-            timeout: 60000 
-        });
+        // Wait for potential video element
+        await page.waitForSelector('video', { timeout: 30000 }).catch(() => console.log("No video element found"));
         
-        // Wait 5 seconds to let the player initialize on the page
-        await new Promise(r => setTimeout(r, 5000));
-const content = await page.content();
-console.log("DEBUG: Page content length is:", content.length);
-// If this length is very small (like < 500), they are serving you a "Blocked" or "Access Denied" page!
-        
-        console.log("✅ Scraper active.");
+        console.log("✅ Scraper cycle finished. Holding connection...");
     } catch (e) {
         console.error("❌ Scraper error:", e.message);
         setTimeout(startScraper, 5000);
@@ -80,9 +71,7 @@ console.log("DEBUG: Page content length is:", content.length);
 
 startScraper();
 
-app.get('/get-live-link', (req, res) => {
-    res.json({ url: latestLink });
-});
+app.get('/get-live-link', (req, res) => res.json({ url: latestLink }));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server active on port ${PORT}`));
