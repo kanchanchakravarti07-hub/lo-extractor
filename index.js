@@ -2,6 +2,8 @@ const express = require('express');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const cors = require('cors');
+const http = require('http');
+const https = require('https');
 
 const app = express();
 app.use(cors());
@@ -26,6 +28,7 @@ async function startScraper() {
             '--disable-gpu'
         ]
     };
+
     
     try {
         const browser = await puppeteer.launch(launchOptions);
@@ -59,6 +62,15 @@ async function startScraper() {
 }
 
 startScraper();
+app.get('/proxy-stream', (req, res) => {
+    const streamUrl = latestLink;
+    if (!streamUrl) return res.status(404).send("No stream found");
+
+    https.get(streamUrl, (proxyRes) => {
+        res.writeHead(proxyRes.statusCode, proxyRes.headers);
+        proxyRes.pipe(res);
+    }).on('error', (e) => res.status(500).send(e.message));
+});
 
 app.get('/get-live-link', (req, res) => res.json({ url: latestLink }));
 

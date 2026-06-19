@@ -34,10 +34,11 @@
                     console.log("🔥 Switching to stream:", data.url);
                     
                     // Update the source with proper type
-                    player.src({ 
-                        src: data.url, 
-                        type: 'application/x-mpegURL' 
-                    });
+                    // index.html ke script mein ye badlo:
+player.src({ 
+    src: '/proxy-stream', // Direct link ki jagah proxy route use karo
+    type: 'application/x-mpegURL' 
+});
                     
                     // Force the player to load and play
                     player.load();
