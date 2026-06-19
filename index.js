@@ -57,11 +57,16 @@ async function startScraper() {
         
         // Add this line before page.goto:
         await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
+        await page.setExtraHTTPHeaders({
+            'Accept-Language': 'en-US,en;q=0.9',
+        });
         await page.goto('https://stream-xhd.com/live1.php?stream=dsports', { 
-            waitUntil: 'networkidle2',
+            waitUntil: 'networkidle0', // Wait until everything is totally loaded
             timeout: 60000 
         });
-        // Add this line after the page.goto
+        
+        // Wait 5 seconds to let the player initialize on the page
+        await new Promise(r => setTimeout(r, 5000));
 const content = await page.content();
 console.log("DEBUG: Page content length is:", content.length);
 // If this length is very small (like < 500), they are serving you a "Blocked" or "Access Denied" page!
