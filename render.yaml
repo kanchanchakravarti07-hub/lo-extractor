@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: stream-master
+    env: node
+    # This installs Chrome so Puppeteer works on the cloud
+    buildCommand: npm install && npx puppeteer browsers install chrome
+    startCommand: node index.js
+    envVars:
+      - key: RENDER
+        value: "true"
+      - key: PUPPETEER_SKIP_CHROMIUM_DOWNLOAD
+        value: "true"

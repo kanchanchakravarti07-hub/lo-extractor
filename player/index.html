@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stream Master | KANCHAN</title>
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+    <link href="https://unpkg.com/@silvermine/videojs-quality-selector/dist/css/quality-selector.css" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="video-container">
+        <video id="my-video" class="video-js vjs-big-play-centered" controls autoplay playsinline muted></video>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script src="https://unpkg.com/@silvermine/videojs-quality-selector/dist/js/silvermine-videojs-quality-selector.min.js"></script>
+
+    <script>
+        const player = videojs('my-video', {
+    html5: {
+        hls: {
+            bandwidth: 5000000, // Forces the player to aim for 5Mbps (high quality)
+            enableLowInitialPlaylist: false
+        }
+    }
+});
+
+        // Initialize plugin only if the stream is ready
+        player.on('loadedmetadata', function() {
+            if (player.qualitySelector) {
+                player.qualitySelector();
+            }
+        });
+
+        async function fetchAndPlay() {
+            try {
+                const res = await fetch('/get-live-link');
+                const data = await res.json();
+                if (data.url && player.src() !== data.url) {
+                    player.src({ src: data.url, type: 'application/x-mpegURL' });
+                    player.play();
+                }
+            } catch (e) { console.warn("Waiting for stream..."); }
+        }
+        setInterval(fetchAndPlay, 5000);
+        fetchAndPlay();
+    </script>
+</body>
+</html>
